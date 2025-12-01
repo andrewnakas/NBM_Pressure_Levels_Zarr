@@ -30,9 +30,18 @@ import requests
 import xarray as xr
 
 
-NBM_BASE = os.environ.get(
-    "NBM_BASE_URL", "https://noaa-nbm-grib2-pds.s3.amazonaws.com"
-)
+NBM_BASES = [
+    # AWS open-data (longer retention, path uses /grib2/)
+    (
+        "aws",
+        os.environ.get(
+            "NBM_BASE_URL", "https://noaa-nbm-grib2-pds.s3.amazonaws.com"
+        ),
+        "grib2",
+    ),
+    # NOMADS (short retention, path uses /core/)
+    ("nomads", "https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod", "core"),
+]
 DEFAULT_PRODUCT = os.environ.get("NBM_PRODUCT", "co")  # CONUS grid
 
 
@@ -65,10 +74,11 @@ def parse_forecast_hours(arg: Optional[str]) -> List[int]:
     return [int(arg)]
 
 
-def build_url(date_str: str, cycle: str, fhr: int, product: str) -> str:
-    # Example: blend.20241130/12/core/blend.t12z.core.f001.co.grib2
+def build_url(base: str, subdir: str, date_str: str, cycle: str, fhr: int, product: str) -> str:
+    # base: e.g., https://noaa-nbm-grib2-pds.s3.amazonaws.com (subdir=grib2)
+    # nomads: https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod (subdir=core)
     return (
-        f"{NBM_BASE}/blend.{date_str}/{cycle}/core/"
+        f"{base}/blend.{date_str}/{cycle}/{subdir}/"
         f"blend.t{cycle}z.core.f{fhr:03d}.{product}.grib2"
     )
 
@@ -94,7 +104,7 @@ def find_latest_run(
     product: str,
     forecast_hours: Iterable[int],
     lookback_hours: int = 72,
-) -> tuple[str, str]:
+) -> tuple[str, str, tuple[str, str, str]]:
     """
     Look backwards hour by hour to find the most recent cycle that has
     the first forecast-hour file available.
@@ -105,9 +115,11 @@ def find_latest_run(
         candidate = now - timedelta(hours=offset)
         date_str = candidate.strftime("%Y%m%d")
         cycle = candidate.strftime("%H")
-        probe_url = build_url(date_str, cycle, fh0, product)
-        if head_ok(probe_url):
-            return date_str, cycle
+        for base_tuple in NBM_BASES:
+            _name, base, subdir = base_tuple
+            probe_url = build_url(base, subdir, date_str, cycle, fh0, product)
+            if head_ok(probe_url):
+                return date_str, cycle, base_tuple
     raise RuntimeError("No recent NBM cycle found in lookback window.")
 
 
@@ -214,14 +226,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     forecast_hours = parse_forecast_hours(args.forecast_hours)
-    date_str, cycle = find_latest_run(args.product, forecast_hours, args.lookback_hours)
-    print(f"[info] Using NBM cycle {date_str} {cycle}z")
+    date_str, cycle, base_tuple = find_latest_run(
+        args.product, forecast_hours, args.lookback_hours
+    )
+    base_name, base_url, subdir = base_tuple
+    print(f"[info] Using NBM cycle {date_str} {cycle}z via {base_name} ({base_url})")
 
     tmpdir = Path(tempfile.mkdtemp(prefix="nbm_dl_"))
     downloaded: List[Path] = []
     try:
         for fh in forecast_hours:
-            url = build_url(date_str, cycle, fh, args.product)
+            url = build_url(base_url, subdir, date_str, cycle, fh, args.product)
             dest = tmpdir / f"blend.t{cycle}z.core.f{fh:03d}.{args.product}.grib2"
             try:
                 download_file(url, dest)
@@ -254,7 +269,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             "cycle_hour": cycle,
             "forecast_hours": forecast_hours,
             "generated_utc": datetime.now(timezone.utc).isoformat(),
-            "source": NBM_BASE,
+            "source": base_url,
+            "source_name": base_name,
             "product": args.product,
         }
         meta_path = Path(args.zarr_path).with_suffix(".metadata.json")
