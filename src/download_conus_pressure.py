@@ -55,7 +55,7 @@ def parse_forecast_hours(arg: Optional[str]) -> List[int]:
         "0,1,2,3,6,9" -> explicit list
     """
     if arg is None:
-        return list(range(0, 37))  # 0-36 hourly
+        return list(range(1, 37))  # 1-36 hourly (NBM starts at f001)
 
     if "," in arg:
         return sorted({int(x.strip()) for x in arg.split(",") if x.strip()})
@@ -110,7 +110,9 @@ def find_latest_run(
     the first forecast-hour file available.
     """
     now = datetime.now(timezone.utc) - timedelta(hours=1)
-    fh0 = min(forecast_hours)
+    # Use first available forecast hour that exists in feed (skip 0 which NBM doesn't provide)
+    sorted_hours = sorted(forecast_hours)
+    fh0 = next((h for h in sorted_hours if h > 0), sorted_hours[0])
     for offset in range(lookback_hours):
         candidate = now - timedelta(hours=offset)
         date_str = candidate.strftime("%Y%m%d")
