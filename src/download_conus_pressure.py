@@ -31,15 +31,15 @@ import xarray as xr
 
 
 NBM_BASES = [
-    # AWS open-data (longer retention, path uses /grib2/)
+    # AWS open-data (structure: blend.YYYYMMDD/CC/core/blend.tCCz.core.fXXX.RR.grib2)
     (
         "aws",
         os.environ.get(
             "NBM_BASE_URL", "https://noaa-nbm-grib2-pds.s3.amazonaws.com"
         ),
-        "grib2",
+        "core",
     ),
-    # NOMADS (short retention, path uses /core/)
+    # NOMADS (short retention, same path structure)
     ("nomads", "https://nomads.ncep.noaa.gov/pub/data/nccf/com/blend/prod", "core"),
 ]
 DEFAULT_PRODUCT = os.environ.get("NBM_PRODUCT", "co")  # CONUS grid
