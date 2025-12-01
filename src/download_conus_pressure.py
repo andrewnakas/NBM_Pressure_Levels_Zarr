@@ -74,9 +74,18 @@ def build_url(date_str: str, cycle: str, fhr: int, product: str) -> str:
 
 
 def head_ok(url: str, timeout: float = 5.0) -> bool:
+    """
+    S3 fronted by CloudFront can block HEAD; fall back to tiny ranged GET.
+    """
     try:
         resp = requests.head(url, timeout=timeout)
-        return resp.status_code == 200
+        if resp.status_code == 200:
+            return True
+    except requests.RequestException:
+        pass
+    try:
+        resp = requests.get(url, headers={"Range": "bytes=0-16"}, timeout=timeout, stream=True)
+        return resp.status_code in (200, 206)
     except requests.RequestException:
         return False
 
@@ -84,7 +93,7 @@ def head_ok(url: str, timeout: float = 5.0) -> bool:
 def find_latest_run(
     product: str,
     forecast_hours: Iterable[int],
-    lookback_hours: int = 18,
+    lookback_hours: int = 72,
 ) -> tuple[str, str]:
     """
     Look backwards hour by hour to find the most recent cycle that has
