@@ -45,9 +45,10 @@ jobs:
       - name: Download & build Zarr
         shell: bash -l {0}
         env:
-          FORECAST_HOURS: "0-36"
+          FORECAST_HOURS: "1-36"
           ZARR_PATH: "data/nbm_conus_pressure.zarr"
           LOOKBACK_HOURS: "48"
+          NBM_FILE_KIND: "master"
         run: |
           python src/download_conus_pressure.py
 

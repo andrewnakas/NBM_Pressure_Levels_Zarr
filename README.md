@@ -5,6 +5,7 @@ Hourly GitHub Action that grabs the latest National Blend of Models (NBM) CONUS 
 ## What it does
 - Finds the most recent available NBM cycle on the public S3 bucket `noaa-nbm-grib2-pds`.
 - Falls back to NOMADS if the AWS open-data bucket is briefly missing a cycle.
+- Probes `master` GRIB files first (where pressure-level fields live), falling back to `core` if needed.
 - Downloads a configurable list of forecast hours (default 0–36) for the CONUS grid (`co`).
 - Reads only pressure‑level fields (`typeOfLevel=isobaricInhPa`) with `cfgrib` and merges them.
 - Concatenates along `forecast_hour` and writes `data/nbm_conus_pressure.zarr` (plus a small metadata JSON).
