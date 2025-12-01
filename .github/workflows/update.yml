@@ -31,9 +31,10 @@ jobs:
         with:
           micromamba-version: "1.5.7-0"
           environment-file: environment.yml
-          cache-environment: true
-          cache-downloads: true
           init-shell: bash
+          cache-environment: false
+          cache-downloads: false
+          use-mamba: true
 
       - name: Show environment
         shell: bash -l {0}
