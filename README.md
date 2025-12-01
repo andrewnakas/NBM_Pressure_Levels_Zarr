@@ -1,42 +1,47 @@
-# NBM CONUS Pressure Levels → Zarr
+# CONUS Pressure Levels → Zarr (HRRR & NAM)
 
-Hourly GitHub Action that grabs the latest National Blend of Models (NBM) CONUS pressure‑level GRIB2 files, converts them to a consolidated Zarr store, and keeps the repo tidy so Git/LFS storage stays minimal.
+Hourly GitHub Action grabs the latest HRRR and NAM pressure‑level GRIB2 files for CONUS, converts each model to its own Zarr store, and keeps the repo lean with LFS + aggressive cleanup.
+
+## Models covered
+- **HRRR CONUS pressure levels** (`hrrr.tCCz.wrfprsfFF.grib2` on AWS `noaa-hrrr-bdp-pds` or NOMADS). citeturn1search0
+- **NAM 12 km CONUS pressure levels** (`nam.tCCz.awphysFF.tm00.grib2` on AWS `noaa-nam-pds` or NOMADS). citeturn1search11
 
 ## What it does
-- Finds the most recent available NBM cycle on the public S3 bucket `noaa-nbm-grib2-pds`.
-- Falls back to NOMADS if the AWS open-data bucket is briefly missing a cycle.
-- Probes `master` GRIB files first (where pressure-level fields live), falling back to `core` if needed.
-- Downloads a configurable list of forecast hours (default 0–36) for the CONUS grid (`co`).
-- Reads only pressure‑level fields (`typeOfLevel=isobaricInhPa`) with `cfgrib` and merges them.
-- Concatenates along `forecast_hour` and writes `data/nbm_conus_pressure.zarr` (plus a small metadata JSON).
-- Cleans temp GRIB downloads, prunes LFS objects, and force‑pushes a single commit to keep history small.
+- Finds the most recent available cycle on AWS, falling back to NOMADS if needed.
+- Downloads configurable forecast hours (default HRRR 0–18, NAM 0–36).
+- Reads only `typeOfLevel=isobaricInhPa` messages with `cfgrib`, concatenates along `forecast_hour`, and writes:
+  - `data/hrrr_conus_pressure.zarr`
+  - `data/nam_conus_pressure.zarr`
+- Writes small `.metadata.json` alongside each store.
+- Cleans temp GRIBs, prunes LFS/Git objects, and force‑pushes a single commit to keep history tiny.
 
 ## Running locally
 ```bash
-micromamba create -f environment.yml -n nbm
-micromamba activate nbm
-python src/download_conus_pressure.py --forecast-hours 0-36 --product co --zarr-path data/nbm_conus_pressure.zarr
+micromamba create -f environment.yml -n wx
+micromamba activate wx
+
+# HRRR
+python src/download_pressure_model.py --model hrrr --forecast-hours 0-18 --zarr-path data/hrrr_conus_pressure.zarr
+
+# NAM
+python src/download_pressure_model.py --model nam --forecast-hours 0-36 --zarr-path data/nam_conus_pressure.zarr
 ```
 
-Environment variables override the same flags:
-- `FORECAST_HOURS` (e.g., `0-48:3` or `0,1,2,3,6`)
-- `NBM_PRODUCT` (`co`, `ak`, `hi`, `pr`)
-- `ZARR_PATH` (default `data/nbm_conus_pressure.zarr`)
-- `LOOKBACK_HOURS` (default `18`)
+Environment variables mirror the flags:
+- `MODEL` (`hrrr` | `nam`)
+- `FORECAST_HOURS`
+- `ZARR_PATH`
+- `LOOKBACK_HOURS`
+- `DOMAIN` (HRRR domain, default `conus`)
 
 ## GitHub Action
-The workflow `.github/workflows/update.yml` runs hourly (`cron: "0 * * * *"`) and on manual dispatch. It:
-1. Checks out with LFS.
-2. Spins up the `environment.yml` env via micromamba.
-3. Executes `src/download_conus_pressure.py`.
-4. Commits changes, prunes LFS/Git objects, and force‑pushes to `main`.
+`.github/workflows/update.yml` runs hourly. It:
+1. Checks out with LFS and sets up micromamba.
+2. Runs HRRR download → `data/hrrr_conus_pressure.zarr`.
+3. Runs NAM download → `data/nam_conus_pressure.zarr`.
+4. Commits, prunes LFS/Git objects, force‑pushes to `main`.
 
-## Notes on storage
-- Zarr store is tracked via LFS pattern `data/nbm_conus_pressure.zarr/**`.
-- Each run removes the previous Zarr directory before writing the new one to avoid version bloat.
-- `git lfs prune` + aggressive `git gc` keep local objects lean; force‑push keeps remote history to a single commit.
-
-## Adjusting coverage
-- Increase lead time by setting `FORECAST_HOURS` (e.g., `0-84:3` for 3‑hourly out to 84 h).
-- Change domain with `NBM_PRODUCT`: `ak` (Alaska), `hi` (Hawaii), `pr` (Puerto Rico).
-- If you need more recent cycles, raise `LOOKBACK_HOURS`; if bandwidth is a concern, lower the hour range.
+## Storage notes
+- Zarr stores are tracked via LFS (`data/hrrr_conus_pressure.zarr/**`, `data/nam_conus_pressure.zarr/**`).
+- Each run replaces the existing store to avoid history bloat.
+- `git lfs prune` + `git gc --aggressive` keep both local and remote lean.

@@ -42,15 +42,26 @@ jobs:
           python -V
           micromamba list | head
 
-      - name: Download & build Zarr
+      - name: HRRR pressure levels -> Zarr
         shell: bash -l {0}
         env:
-          FORECAST_HOURS: "1-36"
-          ZARR_PATH: "data/nbm_conus_pressure.zarr"
-          LOOKBACK_HOURS: "48"
-          NBM_FILE_KIND: "master"
+          MODEL: "hrrr"
+          FORECAST_HOURS: "0-18"
+          ZARR_PATH: "data/hrrr_conus_pressure.zarr"
+          LOOKBACK_HOURS: "10"
+          DOMAIN: "conus"
         run: |
-          python src/download_conus_pressure.py
+          python src/download_pressure_model.py
+
+      - name: NAM pressure levels -> Zarr
+        shell: bash -l {0}
+        env:
+          MODEL: "nam"
+          FORECAST_HOURS: "0-36"
+          ZARR_PATH: "data/nam_conus_pressure.zarr"
+          LOOKBACK_HOURS: "48"
+        run: |
+          python src/download_pressure_model.py
 
       - name: Git status
         shell: bash -l {0}
