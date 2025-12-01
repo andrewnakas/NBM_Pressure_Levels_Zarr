@@ -23,12 +23,17 @@ jobs:
           lfs: true
           fetch-depth: 1
 
+      - name: Ensure Git LFS
+        run: git lfs install --local
+
       - name: Set up micromamba
-        uses: mamba-org/provision-with-micromamba@v14
+        uses: mamba-org/setup-micromamba@v1
         with:
+          micromamba-version: "1.5.7"
           environment-file: environment.yml
-          cache-env: true
+          cache-environment: true
           cache-downloads: true
+          init-shell: bash
 
       - name: Show environment
         shell: bash -l {0}
