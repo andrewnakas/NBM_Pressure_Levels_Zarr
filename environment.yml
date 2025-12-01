@@ -1,0 +1,15 @@
+name: nbm
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - xarray>=2024.6.0
+  - cfgrib>=0.9.10
+  - eccodes
+  - zarr>=2.16
+  - fsspec>=2024.6.0
+  - s3fs>=2024.6.0
+  - requests>=2.31
+  - pandas
+  - numpy
+  - dask

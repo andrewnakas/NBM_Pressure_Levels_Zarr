@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.cache/
+*.idx
+*.grib2
+*.grb2
+*.grib
+*.tmp
+data/tmp/
+data/downloads/
+*.zarr.zip
+*.parquet
+.mamba/
+.micromamba/
+.conda/

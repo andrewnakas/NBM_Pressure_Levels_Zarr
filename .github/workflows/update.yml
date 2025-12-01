@@ -1,0 +1,74 @@
+name: Update CONUS Pressure Zarr
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # hourly
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: nbm-conus-pressure
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Set up micromamba
+        uses: mamba-org/provision-with-micromamba@v14
+        with:
+          environment-file: environment.yml
+          cache-env: true
+          cache-downloads: true
+
+      - name: Show environment
+        shell: bash -l {0}
+        run: |
+          python -V
+          micromamba list | head
+
+      - name: Download & build Zarr
+        shell: bash -l {0}
+        env:
+          FORECAST_HOURS: "0-36"
+          ZARR_PATH: "data/nbm_conus_pressure.zarr"
+          LOOKBACK_HOURS: "18"
+        run: |
+          python src/download_conus_pressure.py
+
+      - name: Git status
+        shell: bash -l {0}
+        run: git status
+
+      - name: Commit changes
+        shell: bash -l {0}
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Update CONUS pressure-level Zarr $(date -u +%Y%m%dT%H00Z)"
+
+      - name: Clean LFS & git objects
+        if: always()
+        shell: bash -l {0}
+        run: |
+          git lfs prune --verify-remote || true
+          git reflog expire --expire-unreachable=now --all || true
+          git gc --prune=now --aggressive || true
+
+      - name: Push
+        shell: bash -l {0}
+        run: git push origin HEAD:main --force
