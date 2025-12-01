@@ -47,7 +47,7 @@ jobs:
         env:
           FORECAST_HOURS: "0-36"
           ZARR_PATH: "data/nbm_conus_pressure.zarr"
-          LOOKBACK_HOURS: "18"
+          LOOKBACK_HOURS: "48"
         run: |
           python src/download_conus_pressure.py
 
