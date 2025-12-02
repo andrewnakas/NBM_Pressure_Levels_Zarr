@@ -139,6 +139,7 @@ def download_file(url: str, dest: Path, retries: int = 3) -> None:
 
 def open_pressure_dataset(path: Path) -> xr.Dataset:
     import cfgrib
+    xr.set_options(use_new_combine_kwarg_defaults=True)
 
     parts = cfgrib.open_datasets(
         path,
@@ -156,7 +157,11 @@ def open_pressure_dataset(path: Path) -> xr.Dataset:
         fh = ds["step"].astype("timedelta64[h]").astype(np.int32).item()
         ds = ds.assign_coords(step=fh).rename(step="forecast_hour")
     else:
-        fh = int(path.name.split(".")[-2][1:])  # f003 -> 3
+        # derive from filename (f##)
+        try:
+            fh = int(path.name.split("f")[-1][:3])
+        except Exception:
+            fh = 0
         ds = ds.expand_dims(forecast_hour=[fh])
 
     chunk_map = {}
@@ -165,7 +170,8 @@ def open_pressure_dataset(path: Path) -> xr.Dataset:
             chunk_map[dim] = min(300, max(80, ds.dims[dim] // 6))
     if "isobaricInhPa" in ds.dims:
         chunk_map["isobaricInhPa"] = -1
-    chunk_map["forecast_hour"] = 4
+    if "forecast_hour" in ds.dims:
+        chunk_map["forecast_hour"] = min(4, ds.dims["forecast_hour"])
     ds = ds.chunk(chunk_map)
     return ds
 
