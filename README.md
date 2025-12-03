@@ -3,14 +3,14 @@
 Hourly GitHub Action grabs the latest HRRR and NAM pressure‑level GRIB2 files for CONUS, converts each model to its own Zarr store, and keeps the repo lean with LFS + aggressive cleanup.
 
 ## Models covered
-- **HRRR CONUS pressure levels** (`hrrr.tCCz.wrfprsfFF.grib2` on AWS `noaa-hrrr-bdp-pds` or NOMADS). citeturn1search0
 - **NAM 12 km CONUS pressure levels** (`nam.tCCz.awphysFF.tm00.grib2` on AWS `noaa-nam-pds` or NOMADS). citeturn1search11
+
+*(HRRR step is disabled in the workflow to keep runs fast; re‑enable by adding the HRRR block in `.github/workflows/update.yml`.)*
 
 ## What it does
 - Finds the most recent available cycle on AWS, falling back to NOMADS if needed.
-- Downloads configurable forecast hours (default HRRR 0–18, NAM 0–36).
+- Downloads configurable forecast hours (default NAM 0–24 in workflow).
 - Reads only `typeOfLevel=isobaricInhPa` messages with `cfgrib`, concatenates along `forecast_hour`, and writes:
-  - `data/hrrr_conus_pressure.zarr`
   - `data/nam_conus_pressure.zarr`
 - Writes small `.metadata.json` alongside each store.
 - Cleans temp GRIBs, prunes LFS/Git objects, and force‑pushes a single commit to keep history tiny.
