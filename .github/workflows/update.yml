@@ -57,7 +57,7 @@ jobs:
         shell: bash -l {0}
         env:
           MODEL: "nam"
-          FORECAST_HOURS: "0-36"
+          FORECAST_HOURS: "0-33"
           ZARR_PATH: "data/nam_conus_pressure.zarr"
           LOOKBACK_HOURS: "48"
         run: |

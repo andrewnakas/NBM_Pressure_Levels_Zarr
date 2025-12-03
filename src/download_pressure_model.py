@@ -150,7 +150,7 @@ def open_pressure_dataset(path: Path) -> xr.Dataset:
     )
     if not parts:
         raise RuntimeError("No isobaric levels found.")
-    ds = xr.merge(parts, compat="override").squeeze(drop=True)
+    ds = xr.merge(parts, compat="override", join="outer").squeeze(drop=True)
 
     # Extract forecast hour from GRIB step if present, else filename
     if "step" in ds:
