@@ -166,13 +166,14 @@ def open_pressure_dataset(path: Path) -> xr.Dataset:
 
     chunk_map = {}
     for dim in ["y", "x", "latitude", "longitude"]:
-        if dim in ds.dims:
-            chunk_map[dim] = min(300, max(80, ds.dims[dim] // 6))
-    if "isobaricInhPa" in ds.dims:
+        if dim in ds.sizes:
+            chunk_map[dim] = min(300, max(80, ds.sizes[dim] // 6))
+    if "isobaricInhPa" in ds.sizes:
         chunk_map["isobaricInhPa"] = -1
-    if "forecast_hour" in ds.dims:
-        chunk_map["forecast_hour"] = min(4, ds.dims["forecast_hour"])
-    ds = ds.chunk(chunk_map)
+    if "forecast_hour" in ds.sizes:
+        chunk_map["forecast_hour"] = min(4, ds.sizes["forecast_hour"])
+    with xr.set_options(use_flox=True):
+        ds = ds.chunk(chunk_map)
     return ds
 
 

@@ -5,7 +5,7 @@ Hourly GitHub Action grabs the latest HRRR and NAM pressure‑level GRIB2 files 
 ## Models covered
 - **NAM 12 km CONUS pressure levels** (`nam.tCCz.awphysFF.tm00.grib2` on AWS `noaa-nam-pds` or NOMADS). citeturn1search11
 
-*(HRRR step is disabled in the workflow to keep runs fast; re‑enable by adding the HRRR block in `.github/workflows/update.yml`. NAM lead time is trimmed to 0–18 h for quicker runs.)*
+*(Workflow runs both HRRR (0–18h) and NAM (0–18h). Old Zarr stores are deleted before each write, and commits include the LFS-tracked Zarr directories.)*
 
 ## What it does
 - Finds the most recent available cycle on AWS, falling back to NOMADS if needed.
