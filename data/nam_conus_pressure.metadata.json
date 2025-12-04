@@ -1,0 +1,29 @@
+{
+  "model": "nam",
+  "cycle_date": "20251204",
+  "cycle_hour": "00",
+  "forecast_hours": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "source": "https://noaa-nam-pds.s3.amazonaws.com",
+  "domain": null,
+  "generated_utc": "2025-12-04T02:13:31.480292+00:00"
+}

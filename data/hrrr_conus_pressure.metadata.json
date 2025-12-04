@@ -1,0 +1,29 @@
+{
+  "model": "hrrr",
+  "cycle_date": "20251204",
+  "cycle_hour": "01",
+  "forecast_hours": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "source": "https://noaa-hrrr-bdp-pds.s3.amazonaws.com",
+  "domain": "conus",
+  "generated_utc": "2025-12-04T02:08:25.609107+00:00"
+}
